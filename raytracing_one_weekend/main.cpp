@@ -16,8 +16,12 @@ color ray_color(const ray &r, const hittable_list &world, uint depth) {
 
     static hit_record hit{};
     if (world.hit(r, 0.001, infinity, hit)) {
-        point3 target = hit.p + random_in_hemisphere(hit.normal);
-        return 0.5 * ray_color(ray(hit.p, target - hit.p), world, depth - 1);
+        ray scattered;
+        color attenuation;
+        if (hit.mat_ptr->scatter(r, hit, attenuation, scattered)) {
+            return attenuation * ray_color(scattered, world, depth - 1);
+        }
+        return {0, 0, 0};
     }
 
     // Background gradient
@@ -45,8 +49,15 @@ int main(int argc, char **argv) {
 
     // World
     hittable_list world;
-    world.add(std::make_shared<sphere>(point3(0, 0, -1), 0.5));
-    world.add(std::make_shared<sphere>(point3(0, -100.5, -1), 100));
+    auto material_ground = std::make_shared<lambertian>(color(0.8, 0.8, 0.0));
+    auto material_center = std::make_shared<lambertian>(color(0.7, 0.3, 0.3));
+    auto material_left = std::make_shared<metal>(color(0.8, 0.8, 0.8));
+    auto material_right = std::make_shared<metal>(color(0.8, 0.6, 0.2));
+
+    world.add(std::make_shared<sphere>(point3(0, -100.5, -1), 100, material_ground));
+    world.add(std::make_shared<sphere>(point3(0, 0, -1), 0.5, material_center));
+    world.add(std::make_shared<sphere>(point3(-1.0, 0.0, -1.0), 0.5, material_left));
+    world.add(std::make_shared<sphere>(point3(1.0, 0.0, -1.0), 0.5, material_right));
 
     // Render
     std::cout << "P3\n" << image_width << ' ' << image_height << "\n255\n";
