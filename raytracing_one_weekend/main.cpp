@@ -16,7 +16,7 @@ color ray_color(const ray &r, const hittable_list &world, uint depth) {
 
     static hit_record hit{};
     if (world.hit(r, 0.001, infinity, hit)) {
-        point3 target = hit.p + hit.normal + random_unit_vector();
+        point3 target = hit.p + random_in_hemisphere(hit.normal);
         return 0.5 * ray_color(ray(hit.p, target - hit.p), world, depth - 1);
     }
 
